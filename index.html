@@ -1,0 +1,106 @@
+<html>
+
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <script src="mySketch.js.js" type="text/javascript"></script>
+    <script src="fluid.js.js" type="text/javascript"></script>
+    <script src="gpu-io.min.js.js" type="text/javascript"></script>
+    <script src="canvas-capture.min.js.js" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.5.0/lib/p5.js" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/gh/dataarts/dat.gui@0.7.9/build/dat.gui.min.js"
+        type="text/javascript"></script>
+</head>
+<style>
+    body {
+        margin: 0;
+    }
+</style>
+
+<body>
+    <div class="container">
+        <video class="input_video"></video>
+        <canvas class="output_canvas" width="1280px" height="720px"></canvas>
+    </div>
+    <script type="module">
+        const videoElement = document.getElementsByClassName('input_video')[0];
+        const canvasElement = document.getElementsByClassName('output_canvas')[0];
+        const canvasCtx = canvasElement.getContext('2d');
+
+
+        function onResults(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(
+                results.image, 0, 0, canvasElement.width, canvasElement.height);
+            if (results.multiHandLandmarks) {
+                for (const landmarks of results.multiHandLandmarks) {
+                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS,
+                        { color: '#00FF00', lineWidth: 5 });
+                    drawLandmarks(canvasCtx, landmarks, { color: '#FF0000', lineWidth: 2 });
+                    // indexMiddleDist 0.00962569654603113
+                    // middleRingDist 0.00841992066823249
+                    // ringPinkyDist 0.006896727085861908
+                    // thumbIndexDist 0.01020688328646236
+                    const thumbTip = landmarks[4];
+                    const indexFingerTip = landmarks[8];
+                    const middleFingerTip = landmarks[12];
+                    const ringFingerTip = landmarks[16];
+                    const pinkyFingerTip = landmarks[20];
+                    const x = windowWidth - indexFingerTip.x * windowWidth;
+                    const y = indexFingerTip.y * windowHeight;
+
+                    const e = { pointerId: 0, clientX: x, clientY: y };
+                    pointerMoved(e);
+                    const pinchRingPinkyThreshold = 0.007; // Adjust this value based on desired pinch sensitivity
+                    const pinchThreshold = 0.01; // Adjust this value based on desired pinch sensitivity
+                    const indexMiddleDist = dist(indexFingerTip.x, indexFingerTip.y, middleFingerTip.x, middleFingerTip.y);
+                    const middleRingDist = dist(middleFingerTip.x, middleFingerTip.y, ringFingerTip.x, ringFingerTip.y);
+                    const ringPinkyDist = dist(ringFingerTip.x, ringFingerTip.y, pinkyFingerTip.x, pinkyFingerTip.y);
+                    const thumbIndexDist = dist(thumbTip.x, thumbTip.y, indexFingerTip.x, indexFingerTip.y);
+
+                    if (indexMiddleDist < pinchThreshold && middleRingDist < pinchThreshold &&
+                        ringPinkyDist < pinchRingPinkyThreshold && thumbIndexDist < pinchThreshold) {
+                        // console.log("indexMiddleDist", indexMiddleDist)
+                        // console.log("middleRingDist", middleRingDist)
+                        // console.log("ringPinkyDist", ringPinkyDist)
+                        // console.log("thumbIndexDist", thumbIndexDist)
+                        fluid.resize(windowWidth, windowHeight);
+                    }
+                }
+            }
+            canvasCtx.restore();
+        }
+
+        const hands = new Hands({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            }
+        });
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+        hands.onResults(onResults);
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({ image: videoElement });
+            },
+            width: 1280,
+            height: 720
+        });
+        camera.start();
+        videoElement.style.display = "none";
+        canvasElement.style.display = "none";
+    </script>
+</body>
+
+</html>
