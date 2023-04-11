@@ -445,7 +445,7 @@ class Fluid {
 			],
 		});
 		
-		this.initGui();
+		// this.initGui();
 	}
 
 	// reset(){

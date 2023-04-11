@@ -20,6 +20,9 @@
     body {
         margin: 0;
     }
+    .dg.a {
+        display: none;
+    }
 </style>
 
 <body>
@@ -57,7 +60,7 @@
 
                     const e = { pointerId: 0, clientX: x, clientY: y };
                     pointerMoved(e);
-                    const pinchRingPinkyThreshold = 0.007; // Adjust this value based on desired pinch sensitivity
+                    const pinchRingPinkyThreshold = 0.008; // Adjust this value based on desired pinch sensitivity
                     const pinchThreshold = 0.01; // Adjust this value based on desired pinch sensitivity
                     const indexMiddleDist = dist(indexFingerTip.x, indexFingerTip.y, middleFingerTip.x, middleFingerTip.y);
                     const middleRingDist = dist(middleFingerTip.x, middleFingerTip.y, ringFingerTip.x, ringFingerTip.y);
